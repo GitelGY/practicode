@@ -16,11 +16,17 @@ public partial class ToDoDbContext : DbContext
     }
 
     public virtual DbSet<Item> Items { get; set; }
-    
     public virtual DbSet<User> Users { get; set; } 
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseMySql("Name=3project", Microsoft.EntityFrameworkCore.ServerVersion.Parse("8.0.44-mysql"));
+    {
+        if (!optionsBuilder.IsConfigured)
+        {
+            string connectionString = "Server=beo0mimowxfvmzk0q76b-mysql.services.clever-cloud.com;Database=beo0mimowxfvmzk0q76b;Uid=uwlmv586mwdypjxp;Pwd=UvG4vsHWRgwEcW5Ntub5;Port=3306;";
+            
+            optionsBuilder.UseMySql(connectionString, Microsoft.EntityFrameworkCore.ServerVersion.Parse("8.0.44-mysql"));
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -29,19 +35,20 @@ public partial class ToDoDbContext : DbContext
             .HasCharSet("utf8mb4");
 
         modelBuilder.Entity<Item>(entity =>
-            {
-                entity.HasKey(e => e.Id).HasName("PRIMARY");
-                entity.ToTable("items");
-                entity.Property(e => e.Name).HasMaxLength(100);
-            });
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+            entity.ToTable("Items"); 
+            entity.Property(e => e.Name).HasMaxLength(100);
+            entity.Property(e => e.IsComplete).HasColumnType("tinyint(1)");
+        });
 
         modelBuilder.Entity<User>(entity =>
-            {
-                entity.HasKey(e => e.Id).HasName("PRIMARY");
-                entity.ToTable("users");
-                entity.Property(e => e.Username).HasMaxLength(100).IsRequired();
-                entity.Property(e => e.Password).IsRequired();
-            });
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+            entity.ToTable("users");
+            entity.Property(e => e.Username).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Password).IsRequired();
+        });
 
         OnModelCreatingPartial(modelBuilder);
     }

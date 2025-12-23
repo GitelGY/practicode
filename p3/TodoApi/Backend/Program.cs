@@ -42,9 +42,11 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddDbContext<ToDoDbContext>(options =>
-    options.UseMySql(builder.Configuration.GetConnectionString("3project"), 
-    ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("3project"))));
+// builder.Services.AddDbContext<ToDoDbContext>(options =>
+//     options.UseMySql(builder.Configuration.GetConnectionString("3project"), 
+//     ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("3project"))));
+
+builder.Services.AddDbContext<ToDoDbContext>();
 
 var app = builder.Build();
 
