@@ -1,7 +1,10 @@
 import axios from 'axios';
 
-axios.defaults.baseURL = "http://localhost:5047";
+// axios.defaults.baseURL = "http://localhost:5047";
 // axios.defaults.baseURL = process.env.REACT_APP_API_URL;
+
+axios.defaults.baseURL = "https://practicode-1.onrender.com";
+
 
 axios.interceptors.response.use(
   response => response,
