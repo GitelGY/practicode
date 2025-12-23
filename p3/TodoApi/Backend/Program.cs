@@ -123,4 +123,10 @@ app.MapDelete("/Item/{id}", async (ToDoDbContext db, int id) =>
     return Results.Ok(item);
 }).RequireAuthorization();
 
+
+app.MapGet("/", () => "TodoApi is running on Render!");
+
+app.UseSwagger();
+app.UseSwaggerUI();
+
 app.Run();
