@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>GitHub Portfolio Explorer</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 900px; margin: auto; }
+        
+        /* עיצוב כותרת וחיפוש */
+        .header-section { text-align: center; margin-bottom: 30px; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .search-box { margin-top: 15px; display: flex; justify-content: center; gap: 10px; }
+        input { padding: 10px; border: 1px solid #ddd; border-radius: 6px; width: 250px; font-size: 16px; }
+        button { padding: 10px 20px; background-color: #2ea44f; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
+        button:hover { background-color: #2c974b; }
+        button.secondary { background-color: #0366d6; }
+
+        /* עיצוב כרטיסיות הפרויקטים */
+        .repo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .repo-card { background: white; padding: 20px; border-radius: 10px; border: 1px solid #e1e4e8; transition: transform 0.2s; position: relative; }
+        .repo-card:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
+        .repo-name { color: #0366d6; font-size: 1.25em; text-decoration: none; font-weight: bold; display: block; margin-bottom: 8px; }
+        .details { font-size: 0.85em; color: #586069; margin-bottom: 5px; }
+        .tags { margin-top: 12px; }
+        .tag { background: #f1f8ff; color: #0366d6; padding: 3px 10px; border-radius: 12px; font-size: 0.75em; margin-left: 5px; border: 1px solid #c8e1ff; }
+        
+        @media (max-width: 600px) { .repo-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-section">
+            <h1>GitHub Explorer 🚀</h1>
+            <div class="search-box">
+                <input type="text" id="usernameInput" placeholder="הקלידי שם משתמש ב-GitHub">
+                <button onclick="searchOtherUser()">חפש משתמש</button>
+                <button class="secondary" onclick="fetchMyPortfolio()">הפורטפוליו שלי</button>
+            </div>
+            <p id="statusMsg" style="margin-top: 15px; font-weight: bold; color: #666;"></p>
+        </div>
+
+        <div id="repos" class="repo-grid">
+            </div>
+    </div>
+
+    <script>
+        // וודאי שהפורט (7298) תואם למה שרץ אצלך ב-Visual Studio
+        const BASE_URL = 'https://localhost:7298/api/Portfolio';
+
+        // פונקציה להצגת הנתונים על המסך
+        function renderRepos(data) {
+            const container = document.getElementById('repos');
+            container.innerHTML = '';
+            
+            if (!data || data.length === 0) {
+                container.innerHTML = '<p>לא נמצאו פרויקטים להצגה.</p>';
+                return;
+            }
+
+            data.forEach(repo => {
+                const card = `
+                    <div class="repo-card">
+                        <a href="${repo.url || repo.htmlUrl}" target="_blank" class="repo-name">${repo.name}</a>
+                        <div class="details">⭐ כוכבים: ${repo.starsCount || repo.stargazersCount || 0}</div>
+                        <div class="details">📅 עדכון אחרון: ${new Date(repo.lastCommit || repo.updatedAt).toLocaleDateString()}</div>
+                        <div class="tags">
+                            ${repo.languages ? repo.languages.map(lang => `<span class="tag">${lang}</span>`).join('') : '<span class="tag">Public</span>'}
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += card;
+            });
+        }
+
+        // שליפת הפורטפוליו האישי שלך (משתמש ב-Cache ובטוקן)
+        async function fetchMyPortfolio() {
+            document.getElementById('statusMsg').innerText = "טוען את הפורטפוליו האישי שלך...";
+            try {
+                const response = await fetch(BASE_URL);
+                const data = await response.json();
+                renderRepos(data);
+                document.getElementById('statusMsg').innerText = "מציג: הפורטפוליו האישי שלי";
+            } catch (e) {
+                document.getElementById('statusMsg').innerText = "שגיאה בחיבור ל-API. וודאי שהשרת רץ.";
+            }
+        }
+
+        // חיפוש משתמש אחר (משתמש ב-Endpoint של ה-Search)
+        async function searchOtherUser() {
+            const user = document.getElementById('usernameInput').value;
+            if (!user) return alert("נא להזין שם משתמש");
+
+            document.getElementById('statusMsg').innerText = `מחפש פרויקטים של ${user}...`;
+            try {
+                const response = await fetch(`${BASE_URL}/search?user=${user}`);
+                const data = await response.json();
+                renderRepos(data);
+                document.getElementById('statusMsg').innerText = `מציג פרויקטים של: ${user}`;
+            } catch (e) {
+                document.getElementById('statusMsg').innerText = "שגיאה בחיפוש המשתמש.";
+            }
+        }
+
+        // טעינה ראשונית של הפורטפוליו שלך
+        fetchMyPortfolio();
+    </script>
+</body>
+</html>

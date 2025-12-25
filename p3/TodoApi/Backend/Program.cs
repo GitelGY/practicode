@@ -8,10 +8,19 @@ using TodoApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 var secretKey = "YourSuperSecretKeyThatIsAtLeast32CharsLong!";
-
 var key = Encoding.ASCII.GetBytes(secretKey);
+
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 
 builder.Services.AddAuthentication(options =>
 {
@@ -30,39 +39,24 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
-
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAll", policy =>
-    {
-        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
-    });
-});
-
-// builder.Services.AddDbContext<ToDoDbContext>(options =>
-//     options.UseMySql(builder.Configuration.GetConnectionString("3project"), 
-//     ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("3project"))));
 
 builder.Services.AddDbContext<ToDoDbContext>();
 
 var app = builder.Build();
 
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
-app.UseCors();
 app.UseCors("AllowAll");
 
-app.UseAuthentication(); 
-app.UseAuthorization();  
+app.UseAuthentication();
+app.UseAuthorization();
 
+
+app.MapGet("/", () => "TodoApi is running on Render!");
 
 app.MapPost("/register", async (User newUser, ToDoDbContext db) => {
     if (await db.Users.AnyAsync(u => u.Username == newUser.Username))
@@ -74,17 +68,17 @@ app.MapPost("/register", async (User newUser, ToDoDbContext db) => {
 });
 
 app.MapPost("/login", async (User loginUser, ToDoDbContext db) => {
-    var user = await db.Users.FirstOrDefaultAsync(u => 
+    var user = await db.Users.FirstOrDefaultAsync(u =>
         u.Username == loginUser.Username && u.Password == loginUser.Password);
-    
+
     if (user is null) return Results.Unauthorized();
 
     var tokenHandler = new JwtSecurityTokenHandler();
     var tokenDescriptor = new SecurityTokenDescriptor
     {
-        Subject = new ClaimsIdentity(new[] { 
+        Subject = new ClaimsIdentity(new[] {
             new Claim(ClaimTypes.Name, user.Username),
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) 
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
         }),
         Expires = DateTime.UtcNow.AddDays(7),
         SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
@@ -94,9 +88,7 @@ app.MapPost("/login", async (User loginUser, ToDoDbContext db) => {
     return Results.Ok(new { token = tokenHandler.WriteToken(token) });
 });
 
-
-
-app.MapGet("/Item", async (ToDoDbContext db) => 
+app.MapGet("/Item", async (ToDoDbContext db) =>
     await db.Items.ToListAsync()).RequireAuthorization();
 
 app.MapPost("/Item", async (ToDoDbContext db, Item newItem) =>
@@ -123,11 +115,5 @@ app.MapDelete("/Item/{id}", async (ToDoDbContext db, int id) =>
     await db.SaveChangesAsync();
     return Results.Ok(item);
 }).RequireAuthorization();
-
-
-app.MapGet("/", () => "TodoApi is running on Render!");
-
-app.UseSwagger();
-app.UseSwaggerUI();
 
 app.Run();
